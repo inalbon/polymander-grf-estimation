@@ -1,196 +1,120 @@
-# Current-Based Contact Force Estimation for a Quadruped Robot
-![Demo](docs/videos/walking-polymander.gif)
+# Polymander Ground Reaction Force Estimation
 
-*Demonstration of the Polymander quadruped robot walking over force plates while motor currents and ground reaction forces are recorded.*
+Polymander is a salamander-inspired amphibious robot developed at EPFL's BioRob lab, able to both walk and swim.
 
-▶️ **Full demonstration:** [docs/videos/walking-polymander.mp4](docs/videos/walking-polymander.mp4)
+![Demo](assets/videos/walking-polymander.gif)
 
-This project investigates whether **ground reaction forces (GRFs)** can be estimated directly from **motor current measurements**, reducing the need for dedicated force sensors on legged robots.
+*Demonstration of the Polymander robot walking over force plates while motor currents and ground reaction forces are recorded.*
 
-**Technologies:**  Embedded Systems · Python · Signal Processing · Feature Engineering · Supervised Learning · Linear Regression · Multiple Linear Regression · Raspberry Pi · Dynamixel Actuators
-
-
-## Context
-
-- **EPFL** — Semester Project, Fall 2022
-- **Laboratory:** Biorobotics Laboratory (BioRob)
-- **Supervisor:** Astha Gupta
-- **Professor:** Prof. Auke Ijspeert
-- Individual project completed over one semester
-
-## My Role
-
-This was an individual project. I was responsible for the complete workflow, including:
-
-- Experimental design
-- Data acquisition
-- Signal synchronization and preprocessing
-- Feature engineering
-- Regression model development and evaluation
-- Result analysis and documentation
+▶️ **Full demonstration:** [assets/videos/walking-polymander.mp4](assets/videos/walking-polymander.mp4)
 
 ## Motivation
-Ground reaction forces are fundamental for balance, gait analysis and locomotion control.
+In case of real world scenario such as disaster recovery, legged robots can navigate in challenging and complex environments where wheeled robots may struggle. To achieve stable locomotion, robots rely on sensory information like **ground reaction force (GRF)**, commonly measured with dedicated force/torque sensors mounted on their feet. However, these additional sensors increase hardware complexity, weight, and cost, while potentially reducing reliability and durability of the robot due to repeated impact forces during locomotion.
 
-Most quadruped robots estimate these forces using dedicated force sensors, which increase hardware complexity and cost.
+Can GRFs be estimated directly from **motor current measurements** instead, without a dedicated force sensor?
 
-The objective of this project was to investigate whether the robot's **motor feedback currents alone** contain enough information to estimate the vertical contact force (**Fz**).
+Using synchronized motor current and force-plate recordings, this pipeline filters and aligns the two signals, then trains a regression model to predict vertical GRF (Fz) from current alone, removing the need for a dedicated force sensor at inference time.
+
+**Software:** Python · NumPy · pandas · SciPy · scikit-learn · Signal Processing · Multiple Linear Regression
+
+**Hardware:** Raspberry Pi Zero W · Dynamixel Actuators · Kistler Force Plates 
 
 ## Experimental Setup
 
-The experiments were conducted using the **Polymander** quadruped robot, equipped with **16 Dynamixel actuators** and controlled by a **Raspberry Pi Zero**. During each trial, motor feedback currents were recorded while the robot walked over **Kistler force plates**, which measured the ground reaction forces.
+Experiments were conducted on the **Polymander** quadruped robot, equipped with **16 Dynamixel actuators** and controlled by a **Raspberry Pi Zero W**. Two independent systems recorded data simultaneously during each trial:
 
-![Robot](docs/images/polymander.png)
+- **Motor currents:** logged on-board via the Raspberry Pi Zero W as the robot walked.
+- **Ground reaction forces:** measured by a **Kistler force plate**, acquired through the lab's DAQ system and logged on a lab laptop, serving as ground truth.
+
+![Robot](assets/images/polymander.png)
 
 *Polymander quadruped robot.*
 
----
-
-![Force plate setup](docs/images/force-plate-setup.png)
+![Force plate setup](assets/images/force-plate-setup.png)
 
 *Experimental setup for recording ground reaction forces.*
 
-The two data streams were synchronized during post-processing using an initial gait sequence.
+Motor control and data logging rely on a C++ controller running locally on the robot's Raspberry Pi Zero W, originally developed by **Laura Paez**. I extended the controller to implement the stepping sequence, and the initial-posture logic that starts the test limb pre-lifted off the ground. These extensions were used to generate the motor feedback logs used in this project. The controller itself is not included in this repo (lab-owned).
 
----
+The two data streams (motor currents and force plate measurement) were recorded at different sampling rates and synchronized during post-processing.
 
-# Methodology
+## Pipeline
 
 The complete workflow consisted of four stages:
+1. Record raw signals
+2. Filtering and synchronization
+3. Multiple linear regression
+4. Force estimation
 
-![Pipeline](docs/images/pipeline.png)
-
-1. Record synchronized motor current and force plate signals.
-2. Preprocess and align the signals.
-3. Extract meaningful features from actuator currents.
-4. Train regression models to estimate the vertical ground reaction force.
-
-
-## Signal Synchronization
-
-Motor currents and force plate measurements were acquired at different sampling rates and required synchronization before modelling.
-
-The initial gait sequence was used as a temporal reference for aligning both signals.
-
-![Signal alignment](docs/images/signal-alignment.png)
-
-## Model comparison
-Three regression models were evaluated to determine which actuator signals best predict the vertical ground reaction force.
-
-| Model | Observation |
-|--------|-------------|
-| Hip motor current | Weak predictor of contact force. |
-| Calf motor current | Significantly stronger correlation with ground reaction force. |
-| Hip + calf motor currents | Best overall prediction accuracy by combining complementary information. |
-
-The stronger performance of the calf actuator is expected since it is mechanically closer to the foot-ground contact point.
+![Pipeline](assets/images/pipeline.png)
 
 ## Results
 
-### Hip motor only
+**R² ≈ 0.8**
 
-- Weak correlation with vertical force
-- **R² ≈ 0.15**
-
-![Hip regression](docs/images/hip-regression.png)
-
----
-
-### Calf motor only
-
-- Strong correlation with vertical force
-- **R² ≈ 0.67**
-
-![Calf regression](docs/images/calf-regression.png)
-
----
-
-### Multiple Linear Regression
-- Strong correlation with vertical force
-- **R² ≈ 0.8**
-
-Combining hip and calf motor currents produced the most accurate force estimates.
-
-|First view | Second view | Third view|
-|---|---|---|
-![mlr-hyperplane-1](docs/images/mlr-hyperplane-1.png) | ![mlr-hyperplane-2](docs/images/mlr-hyperplane-2.png)| ![mlr-hyperplane-3](docs/images/mlr-hyperplane-3.png)
-
-*Three views of the fitted multiple linear regression plane relating hip and calf motor currents to the measured vertical ground reaction force.*
-
-![Prediction](docs/images/mlr-pred.png)
+Combining hip and calf motor currents produced the most accurate force estimates. The calf actuator (pitch movement -> related to the Fz force) is the stronger predictor; combining both gives the best result.
 
 The predicted force closely follows the measured force plate signal throughout the gait cycle.
 
----
+![Prediction](assets/images/mlr-pred.png)
 
-## Key Results
+|First view | Second view | Third view|
+|---|---|---|
+![mlr-hyperplane-1](assets/images/mlr-hyperplane-1.png) | ![mlr-hyperplane-2](assets/images/mlr-hyperplane-2.png)| ![mlr-hyperplane-3](assets/images/mlr-hyperplane-3.png)
 
-- Successfully estimated ground reaction forces using motor feedback currents.
-- Demonstrated that actuator location strongly influences predictive power.
-- Improved prediction accuracy by combining multiple motor currents.
-- Developed a complete experimental and data-processing pipeline from acquisition to model evaluation.
+*Three views of the fitted multiple linear regression plane relating hip and calf motor currents to the measured vertical ground reaction force.*
 
----
-
-## Limitations
-
-- Linear regression cannot capture all nonlinear actuator dynamics.
-- Experiments were performed on a single gait and controlled laboratory setup.
-- Performance depends on accurate signal synchronization.
-
----
+**Limitations**
+- Linear regression cannot capture all nonlinear actuator dynamics, which shows up as residual error (RMSE ≈ 1N on a 0-4N range).
+- Experiments were also limited to 45 trials at 3 amplitudes and 3 frequencies for a single stepping limb (front left) rather than full walking gait. Walking only produced one step on the force plate per trial, which wasn't enough data to train on.
 
 ## Repository Structure
 
 ```text
-Current-Based-Contact-Estimation/
-├── src/
-├── notebooks/
-├── data/
-├── docs/
+polymander-grf-estimation/
+├── assets/
 │   ├── images/
-│   ├── videos/
-│   └── report/
-└── README.md
+│   └── videos/
+├── data/                    # not included - lab-owned experimental data
+├── models/                  # trained regression model (.pkl)
+├── notebooks/
+├── polymander/              # loaders, signal processing, visualization
+├── results/                 # not included - output figures
+├── pyproject.toml
+├── README.md
+└── requirements.txt
 ```
 
----
-
 ## Getting Started
+If you've ever inherited a project with no setup instructions and burned an afternoon on a version mismatch, this section is for you.
 
-### Requirements
+### Installation
 
-- Python 3
-- NumPy
-- Pandas
-- Matplotlib
-- Scikit-learn
-- Jupyter Notebook
+Clone the repo and setup a conda environment:
 
-Clone the repository and install the required dependencies before running the notebooks or Python scripts.
+```bash
+git clone https://github.com/inalbon/polymander-grf-estimation.git
+cd polymander-grf-estimation
+conda create -n polymander python=3.10
+conda activate polymander
+```
 
+Install dependencies and the local package:
 
----
+```bash
+pip install -r requirements.txt
+pip install -e .
+```
 
-## Key Takeaways
+### Running
+```bash
+  python scripts/train_force_estimator.py
+```
 
-- Designed an end-to-end robotics experiment.
-- Synchronized heterogeneous sensor data.
-- Applied signal processing and feature engineering.
-- Compared regression models for force estimation.
-- Evaluated model performance using experimental data.
-
----
+> Note: `scripts/` and `notebooks/` expect the original experimental data, which isn't included in this repo (lab-owned). The trained models in `models/` are provided directly so you can inspect results without needing to rerun the pipeline. Feel free to reach out if you're curious about the data.
 
 ## Authors & Acknowledgements
 
 **Malika In-Albon**
 
-Semester project conducted at the **EPFL Biorobotics Laboratory (BioRob)** under the supervision of **Astha Gupta**, as part of the Master's programme in Robotics.
-
-## Project Report
-
-📄 The complete report is available in:
-
-`docs/report/current_based_contact_estimation.pdf`
-
+Semester project (10 ECTS, Fall 2022) at the **Biorobotics Laboratory (BioRob)** supervised by **Astha Gupta**, under **Prof. Auke Ijspeert**.

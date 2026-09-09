@@ -8,8 +8,8 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
-from load_data import LoadData
-from feature_engineering_utils import *
+from polymander.experiment_loader import LoadData
+from polymander.signal_processing import *
 
 
 # List of folder
@@ -33,8 +33,8 @@ for list_amp in list_list_amp:
     # -------------------------------- Load data ----------------------------------------
     load_data = LoadData()
     for folder in list_amp:
-        load_data.load_polymander_data(dir_name=f'logs_polymander/static/FL/{folder}')
-        load_data.load_force_plates_data(dir_name=f'logs_force_plates/static/FL/{folder}')
+        load_data.load_polymander_data(dir_name=f'../data/logs_polymander/static/FL/{folder}')
+        load_data.load_force_plates_data(dir_name=f'../data/logs_force_plates/static/FL/{folder}')
     print(f'{len(load_data.list_polymander)} files in list_polymander')
     print(f'{len(load_data.list_force_plates)} files in list_force_plate')
     # -------------------------------- Feature engineering ----------------------------
@@ -103,8 +103,8 @@ for list_amp in list_list_amp:
     ax.set(xlabel='time [s]', ylabel='Fz [N]')
     ax.legend()
 
-    plt.savefig(f'figures/lr_results/amp/lr_8_{save_folder}.png', format='png')
-    plt.savefig(f'figures/lr_results/amp/lr_8_{save_folder}.eps', format='eps')
+    plt.savefig(f'../results/figures/lr_results/amp/lr_8_{save_folder}.png', format='png')
+    plt.savefig(f'../results/figures/lr_results/amp/lr_8_{save_folder}.eps', format='eps')
 
 
     # Linear regression with calf motor (motor 9)
@@ -139,8 +139,8 @@ for list_amp in list_list_amp:
     ax.set(xlabel='time [s]', ylabel='Fz [N]')
     ax.legend()
 
-    plt.savefig(f'figures/lr_results/amp/lr_9_{save_folder}.png', format='png')
-    plt.savefig(f'figures/lr_results/amp/lr_9_{save_folder}.eps', format='eps')
+    plt.savefig(f'../results/figures/lr_results/amp/lr_9_{save_folder}.png', format='png')
+    plt.savefig(f'../results/figures/lr_results/amp/lr_9_{save_folder}.eps', format='eps')
 
     # Multiple linear regression
     mlr = LinearRegression()
@@ -189,8 +189,8 @@ for list_amp in list_list_amp:
     ax.set(xlabel='time [s]', ylabel='Fz [N]')
     ax.legend()
 
-    plt.savefig(f'figures/lr_results/amp/mlr_{save_folder}.png', format='png')
-    plt.savefig(f'figures/lr_results/amp/mlr_{save_folder}.eps', format='eps')
+    plt.savefig(f'../results/figures/lr_results/amp/mlr_{save_folder}.png', format='png')
+    plt.savefig(f'../results/figures/lr_results/amp/mlr_{save_folder}.eps', format='eps')
 
 plt.show()
 

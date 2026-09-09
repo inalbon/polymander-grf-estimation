@@ -135,8 +135,6 @@ dmypy.json
 *.MOV
 
 # Folders
-logs_force_plates
-logs_polymander
-scratch
+data/
+results/
 .idea
-figures

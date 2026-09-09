@@ -7,8 +7,8 @@ Created on Mon Oct 24 11:09:06 2022
 import os
 from os.path import dirname, realpath, join
 
-from log_force_plates import LogForcePlates
-from log_polymander import LogPolymander
+from polymander.force_plate_log import LogForcePlates
+from polymander.polymander_log import LogPolymander
 
 
 class LoadData:

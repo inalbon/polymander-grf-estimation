@@ -7,8 +7,9 @@ Created on Fri Dec 30 10:25:14 2022
 import pickle
 from sklearn.metrics import (mean_squared_error, mean_absolute_error)
 
-from load_data import LoadData
-from feature_engineering_utils import *
+from polymander.experiment_loader import LoadData
+from polymander.signal_processing import *
+from polymander.visualization import *
 
 # List of folders in which the data are stored
 list_folder = ['amp_0.2_freq_0.1', 'amp_0.2_freq_0.5', 'amp_0.2_freq_1.0',
@@ -26,13 +27,13 @@ list_metrics_name = ['MSE', 'RMSE', 'MAE']
 # Static polymander for prediction
 poly_static_FL = LoadData()
 for folder in list_folder:
-    poly_static_FL.load_polymander_data(dir_name=f'logs_polymander/static/FL/prediction/{folder}')
-    poly_static_FL.load_force_plates_data(dir_name=f'logs_force_plates/static/FL/prediction/{folder}')
+    poly_static_FL.load_polymander_data(dir_name=f'../data/logs_polymander/static/FL/prediction/{folder}')
+    poly_static_FL.load_force_plates_data(dir_name=f'../data/logs_force_plates/static/FL/prediction/{folder}')
 print(f'{len(poly_static_FL.list_polymander)} files in list_polymander')
 print(f'{len(poly_static_FL.list_force_plates)} files in list_force_plate')
 
 # ------------------------------- Load model-------------------------
-mlr = pickle.load(open('models/mlr.pkl', 'rb'))
+mlr = pickle.load(open('../models/mlr.pkl', 'rb'))
 
 # -------------------------------- Feature engineering ----------------------------
 check = False
@@ -72,7 +73,7 @@ list_metrics = [list_mse, list_rmse, list_mae]
 # Plot 3D bar chart of error depending on amplitude and frequency
 for (metric, metric_name) in zip(list_metrics, list_metrics_name):
     plot_3d_metrics(metric, metric_name)
-    plt.savefig(f'figures/lr_results/3D_bar_chart_robust_model_{metric_name}.png', format='png')
+    plt.savefig(f'../results/figures/lr_results/3D_bar_chart_robust_model_{metric_name}.png', format='png')
 
 plt.show()
 

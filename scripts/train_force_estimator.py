@@ -8,8 +8,8 @@ import pickle
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 
-from load_data import LoadData
-from feature_engineering_utils import *
+from polymander.experiment_loader import LoadData
+from polymander.signal_processing import *
 
 # List of folders in which the data are stored
 list_folder = ['amp_0.2_freq_0.1', 'amp_0.2_freq_0.5', 'amp_0.2_freq_1.0',
@@ -26,8 +26,8 @@ list_metrics_name = ['R2', 'MSE', 'RMSE', 'MAE']
 # -------------------------------- Load data ----------------------------------
 FL_limb = LoadData()
 for folder in list_folder:
-    FL_limb.load_polymander_data(dir_name=f'logs_polymander/static/FL/{folder}')
-    FL_limb.load_force_plates_data(dir_name=f'logs_force_plates/static/FL/{folder}')
+    FL_limb.load_polymander_data(dir_name=f'../data/logs_polymander/static/FL/{folder}')
+    FL_limb.load_force_plates_data(dir_name=f'../data/logs_force_plates/static/FL/{folder}')
 print(f'{len(FL_limb.list_polymander)} files in list_polymander')
 print(f'{len(FL_limb.list_force_plates)} files in list_force_plate')
 
@@ -55,7 +55,7 @@ mlr = LinearRegression()
 mlr.fit(X_train, y_train)
 
 # Save model
-pickle.dump(mlr, open('models/mlr.pkl', 'wb'))
+pickle.dump(mlr, open('../models/mlr.pkl', 'wb'))
 
 # K-fold cross validation
 kf = KFold(n_splits=10, shuffle=True, random_state=0)
@@ -84,6 +84,6 @@ ax.set_title('Multiple linear regression model')
 ax.set(xlabel='Metrics')
 ax.set_xticks([1, 2, 3, 4], ['R2', 'MSE', 'RMSE', 'MAE'])
 
-plt.savefig('figures/lr_results/one_model_metrics.png', format='png')
+plt.savefig('../results/figures/lr_results/one_model_metrics.png', format='png')
 
 plt.show()

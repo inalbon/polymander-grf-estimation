@@ -8,8 +8,9 @@ import pickle
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 
-from load_data import LoadData
-from feature_engineering_utils import *
+from polymander.experiment_loader import LoadData
+from polymander.signal_processing import *
+from polymander.visualization import *
 
 # List of folders in which the data are stored
 list_folder = ['amp_0.2_freq_0.1', 'amp_0.2_freq_0.5', 'amp_0.2_freq_1.0',
@@ -27,8 +28,8 @@ list_metrics_name = ['R2', 'MSE', 'RMSE', 'MAE']
 for folder in list_folder:
     # -------------------------------- Load data ----------------------------------------
     load_data = LoadData()
-    load_data.load_polymander_data(dir_name=f'logs_polymander/static/FL/{folder}')
-    load_data.load_force_plates_data(dir_name=f'logs_force_plates/static/FL/{folder}')
+    load_data.load_polymander_data(dir_name=f'../data/logs_polymander/static/FL/{folder}')
+    load_data.load_force_plates_data(dir_name=f'../data/logs_force_plates/static/FL/{folder}')
     print(f'{len(load_data.list_polymander)} files in list_polymander')
     print(f'{len(load_data.list_force_plates)} files in list_force_plate')
 
@@ -56,7 +57,7 @@ for folder in list_folder:
     mlr.fit(X_train, y_train)
 
     # Save model
-    pickle.dump(mlr, open(f'models/mlr_{folder}.pkl', 'wb'))
+    pickle.dump(mlr, open(f'../models/mlr_{folder}.pkl', 'wb'))
     y_pred = mlr.predict(X_test)
 
     # Metrics
@@ -102,7 +103,7 @@ for (metric_name, metric) in zip(list_metrics_name, list_metrics):
 
     plot_3d_metrics(results, metric_name, errors)
 
-    plt.savefig(f'figures/lr_results/3D_bar_chart_{metric_name}.png', format='png')
-    plt.savefig(f'figures/lr_results/3D_bar_chart_{metric_name}.eps', format='eps')
+    plt.savefig(f'../results/figures/lr_results/3D_bar_chart_{metric_name}.png', format='png')
+    plt.savefig(f'../results/figures/lr_results/3D_bar_chart_{metric_name}.eps', format='eps')
 
 plt.show()
