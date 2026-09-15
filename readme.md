@@ -4,9 +4,7 @@ Polymander is a salamander-inspired amphibious robot developed at EPFL's BioRob 
 
 ![Demo](assets/videos/walking-polymander.gif)
 
-*Demonstration of the Polymander robot walking over force plates while motor currents and ground reaction forces are recorded.*
-
-▶️ **Full demonstration:** [assets/videos/walking-polymander.mp4](assets/videos/walking-polymander.mp4)
+*Demonstration of the Polymander robot walking over force plate. The force estimator was trained using controlled stepping-in-place experiments on the force plate.*
 
 ## Motivation
 In case of real world scenario such as disaster recovery, legged robots can navigate in challenging and complex environments where wheeled robots may struggle. To achieve stable locomotion, robots rely on sensory information like **ground reaction force (GRF)**, commonly measured with dedicated force/torque sensors mounted on their feet. However, these additional sensors increase hardware complexity, weight, and cost, while potentially reducing reliability and durability of the robot due to repeated impact forces during locomotion.
@@ -17,14 +15,14 @@ Using synchronized motor current and force-plate recordings, this pipeline filte
 
 **Software:** Python · NumPy · pandas · SciPy · scikit-learn · Signal Processing · Multiple Linear Regression
 
-**Hardware:** Raspberry Pi Zero W · Dynamixel Actuators · Kistler Force Plates 
+**Hardware:** Raspberry Pi Zero W · Dynamixel Actuators · Kistler Force Plate
 
 ## Experimental Setup
 
 Experiments were conducted on the **Polymander** quadruped robot, equipped with **16 Dynamixel actuators** and controlled by a **Raspberry Pi Zero W**. Two independent systems recorded data simultaneously during each trial:
 
 - **Motor currents:** logged on-board via the Raspberry Pi Zero W as the robot walked.
-- **Ground reaction forces:** measured by a **Kistler force plate**, acquired through the lab's DAQ system and logged on a lab laptop, serving as ground truth.
+- **Ground reaction forces:** measured by a **Kistler force plate**, serving as ground truth.
 
 ![Robot](assets/images/polymander.png)
 
@@ -38,25 +36,31 @@ Motor control and data logging rely on a C++ controller running locally on the r
 
 The two data streams (motor currents and force plate measurement) were recorded at different sampling rates and synchronized during post-processing.
 
+## Dataset
+
+**Training dataset — 45 trials.** Front left limb was stepped in place across every combination of 3 amplitudes and 3 frequencies, repeated 5 times each. This dataset was used both to study how model performance varies by condition (`evaluate_amplitude_effect.py`, `evaluate_frequency_effect.py`, `evaluate_amp_freq_grid.py`) and to train one generalized model across all conditions pooled together (`train_force_estimator.py`).
+
+**Testing dataset — 9 trials.** Recorded separately afterward, one trial per amplitude/frequency combination, used exclusively to test the generalized model on data it never saw during training (`evaluate_generalized_model.py`).
+
+> Stepping in place (rather than full walking) was necessary because walking only produced one step on the force plate per trial (not enough data per trial to train on).
+
 ## Pipeline
 
-The complete workflow consisted of four stages:
-1. Record raw signals
+The workflow consisted of four stages:
+1. Raw signal acquisition
 2. Filtering and synchronization
-3. Multiple linear regression
-4. Force estimation
+3. Regression model training
+4. Vertical ground reaction force estimation
 
-![Pipeline](assets/images/pipeline.png)
+## Key results
 
-## Results
-
-**R² ≈ 0.8**
+RMSE = 0.99N ± 0.14N evaluated on testing dataset (0-6N force range)
 
 Combining hip and calf motor currents produced the most accurate force estimates. The calf actuator (pitch movement -> related to the Fz force) is the stronger predictor; combining both gives the best result.
 
-The predicted force closely follows the measured force plate signal throughout the gait cycle.
+![Prediction](assets/images/mlr-pred-one-trial.png)
 
-![Prediction](assets/images/mlr-pred.png)
+*Measured vs. Predicted Ground Reaction Force for one trial*
 
 |First view | Second view | Third view|
 |---|---|---|
@@ -65,8 +69,8 @@ The predicted force closely follows the measured force plate signal throughout t
 *Three views of the fitted multiple linear regression plane relating hip and calf motor currents to the measured vertical ground reaction force.*
 
 **Limitations**
-- Linear regression cannot capture all nonlinear actuator dynamics, which shows up as residual error (RMSE ≈ 1N on a 0-4N range).
-- Experiments were also limited to 45 trials at 3 amplitudes and 3 frequencies for a single stepping limb (front left) rather than full walking gait. Walking only produced one step on the force plate per trial, which wasn't enough data to train on.
+- Linear regression cannot capture all nonlinear actuator dynamics, which shows up as residual error (RMSE ≈ 1N on a 0-6N range).
+- Experiments were limited to stepping in place with a single limb. Full walking gait was not investigated because each trial produced only one step on the force plate, providing insufficient data for model training.
 
 ## Repository Structure
 
@@ -77,9 +81,10 @@ polymander-grf-estimation/
 │   └── videos/
 ├── data/                    # not included - lab-owned experimental data
 ├── models/                  # trained regression model (.pkl)
-├── notebooks/
+├── notebooks/               # exploratory analysis and visualization
 ├── polymander/              # loaders, signal processing, visualization
 ├── results/                 # not included - output figures
+├── scripts/                 # training and evaluation scripts
 ├── pyproject.toml
 ├── README.md
 └── requirements.txt
@@ -111,7 +116,7 @@ pip install -e .
   python scripts/train_force_estimator.py
 ```
 
-> Note: `scripts/` and `notebooks/` expect the original experimental data, which isn't included in this repo (lab-owned). The trained models in `models/` are provided directly so you can inspect results without needing to rerun the pipeline. Feel free to reach out if you're curious about the data.
+> Note: `scripts/` and `notebooks/` expect the original experimental data, which isn't included in this repo (lab-owned).
 
 ## Authors & Acknowledgements
 

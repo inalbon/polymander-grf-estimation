@@ -70,6 +70,12 @@ for (i, j) in zip(poly_static_FL.list_polymander, poly_static_FL.list_force_plat
 
 list_metrics = [list_mse, list_rmse, list_mae]
 
+print("\nFinal metrics")
+print(f"Mean RMSE: {np.mean(list_rmse):.2f} ± {np.std(list_rmse):.2f} N\n")
+
+for (param, value) in zip(list_folder, list_rmse):
+    print(f"{param}: RMSE = {value:.3f}")
+
 # Plot 3D bar chart of error depending on amplitude and frequency
 for (metric, metric_name) in zip(list_metrics, list_metrics_name):
     plot_3d_metrics(metric, metric_name)
